@@ -1,3 +1,32 @@
+import os
+import subprocess
+from dotenv import load_dotenv
+
+# Ensure App Support directory exists and load .env from there
+app_support_path = os.path.expanduser("~/Library/Application Support/MeetingLight")
+os.makedirs(app_support_path, exist_ok=True)
+env_path = os.path.join(app_support_path, ".env")
+load_dotenv(dotenv_path=env_path)
+
+required_env_vars = [
+    "GOVEE_API_KEY",
+    "GOVEE_DEVICE_MAC",
+    "GOVEE_MODEL",
+    "GOOGLE_API_KEY",
+    "GOOGLE_CALENDAR_ID"
+]
+
+
+if not all(os.getenv(var) for var in required_env_vars):
+    print("Missing environment variables. Launching setup in Terminal...")
+    apple_script = f'''
+    tell application "Terminal"
+        activate
+        do script "cd '{os.getcwd()}' && source .venv/bin/activate && python setup.py"
+    end tell
+    '''
+    subprocess.run(["osascript", "-e", apple_script])
+    exit()
 import rumps
 import threading
 from datetime import datetime
