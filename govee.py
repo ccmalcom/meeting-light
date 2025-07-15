@@ -2,7 +2,9 @@ import os
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()
+app_support_path = os.path.expanduser("~/Library/Application Support/MeetingLight")
+env_path = os.path.join(app_support_path, ".env")
+load_dotenv(dotenv_path=env_path)
 
 GOVEE_API_KEY = os.getenv("GOVEE_API_KEY")
 GOVEE_DEVICE_MAC = os.getenv("GOVEE_DEVICE_MAC")

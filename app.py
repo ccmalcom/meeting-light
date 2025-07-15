@@ -19,10 +19,11 @@ required_env_vars = [
 
 if not all(os.getenv(var) for var in required_env_vars):
     print("Missing environment variables. Launching setup in Terminal...")
+    base_path = os.path.dirname(os.path.abspath(__file__))
     apple_script = f'''
     tell application "Terminal"
         activate
-        do script "cd '{os.getcwd()}' && source .venv/bin/activate && python setup.py"
+        do script "cd '{base_path}' && source .venv/bin/activate && python setup.py"
     end tell
     '''
     subprocess.run(["osascript", "-e", apple_script])

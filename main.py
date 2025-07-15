@@ -1,3 +1,9 @@
+import os
+from dotenv import load_dotenv
+
+app_support_path = os.path.expanduser("~/Library/Application Support/MeetingLight")
+env_path = os.path.join(app_support_path, ".env")
+load_dotenv(dotenv_path=env_path)
 from govee import set_light_on, set_light_off, get_device_list, set_light_color, set_light_brightness, set_color_temperature
 from gcal import get_upcoming_events
 from datetime import datetime, timezone

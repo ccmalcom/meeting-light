@@ -3,7 +3,9 @@ import requests
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
-load_dotenv()
+app_support_path = os.path.expanduser("~/Library/Application Support/MeetingLight")
+env_path = os.path.join(app_support_path, ".env")
+load_dotenv(dotenv_path=env_path)
 
 API_KEY = os.getenv("GOOGLE_API_KEY")
 CALENDAR_ID = os.getenv("GOOGLE_CALENDAR_ID")
