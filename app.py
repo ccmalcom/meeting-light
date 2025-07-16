@@ -1,4 +1,5 @@
 import os
+import sys
 from dotenv import load_dotenv, set_key, dotenv_values
 
 # Ensure App Support directory exists and load .env from there
@@ -52,7 +53,7 @@ class MeetingLightApp(rumps.App):
 
         # Prompt for missing env vars on first launch
         if not all(os.getenv(var) for var in required_env_vars):
-            rumps.alert("Missing environment variables. Please complete setup.")
+            rumps.alert("Welcome to Meeting Light!\n\nPlease enter your configuration values on the next screens.\n\nYou can change these later in the Settings menu. For more information, please see the README.md file.")
             self.open_settings(None)
             load_dotenv(dotenv_path=env_path, override=True)
 
@@ -97,7 +98,8 @@ class MeetingLightApp(rumps.App):
             if response.clicked and response.text:
                 set_key(env_path, key, response.text)
 
-        rumps.alert("Settings updated. Restart the app to apply changes.")
-
+        rumps.alert("Config updated! Restarting the app...")
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+        
 if __name__ == "__main__":
     MeetingLightApp().run()
