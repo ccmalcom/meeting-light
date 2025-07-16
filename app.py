@@ -80,8 +80,8 @@ class MeetingLightApp(rumps.App):
 
         fields = {
             "GOVEE_API_KEY": "Enter your Govee API Key:",
-            "GOVEE_DEVICE_MAC": "Enter your Govee Device MAC:",
-            "GOVEE_MODEL": "Enter your Govee Model:",
+            "GOVEE_DEVICE_MAC": "Enter your Govee Device MAC (xx:xx:xx:xx:xx:xx):",
+            "GOVEE_MODEL": "Enter your Govee Model (H6001):",
             "GOOGLE_CALENDAR_ID": "Enter your Google Calendar ID:"
         }
 

@@ -1,5 +1,3 @@
-
-
 # 💡 Meeting Light
 
 **Meeting Light** is a lightweight macOS menubar app that uses a Govee LED light bar to visually notify you of upcoming meetings pulled from your Google Calendar.
@@ -16,47 +14,36 @@
 
 ### 🚀 Setup
 
-#### 1. Clone this repo
+#### 1. Download the app
 
-```bash
-git clone https://github.com/yourusername/meeting-light.git
-cd meeting-light
-```
+Download the latest `.zip` release from the [Releases](https://github.com/ccmalcom/meeting-light/releases) page and unzip it.
 
-#### 2. Run the setup script
+Move `Meeting Light.app` to your `/Applications` folder.
 
-```bash
-python setup.py
-```
+#### 2. First launch setup
 
-You’ll be prompted to enter:
+On first launch, the app will prompt you to enter the following credentials, which will be saved in a `.env` file in `~/Library/Application Support/MeetingLight`:
 
-- Govee API Key
-- Govee MAC Address
-- Govee Model (e.g. H6159)
-- Google Calendar API Key
-- Google Calendar ID
-
-These will be saved in a `.env` file in ~/Library/Application Support/MeetingLight.
+- **Govee API Key**: You can request your personal API key by signing into your Govee account at [https://developer.govee.com](https://developer.govee.com) and registering for API access.
+- **Govee MAC Address**: This is the unique identifier for your Govee device. You can find it in the Govee app under the device's settings.
+- **Govee Model (e.g. H6159)**: The model number of your Govee light. It’s listed in the app or on the packaging.
+- **Google Calendar ID**: Use the ID of a public Google Calendar you want to sync. This is usually your email address or a custom calendar ID (found in Google Calendar settings under “Integrate calendar”).
 
 ---
 
 ### 💻 Usage
 
-#### Development mode:
+#### Running the App
 
-```bash
-source .venv/bin/activate
-python app.py
-```
+Double-click `Meeting Light.app` to launch it from your Applications folder. It will run in your macOS menubar.
 
-To run the app as a background utility at login, you can create a macOS Automator app or use tools like `rumps` to generate a menubar app.
+To enable the app to launch at login, go to **System Settings > General > Login Items** and add Meeting Light.
 
 ---
 
 ### 🛠 Requirements
 
-- Python 3.9+
+- Python 3.9+ (only for development)
 - A Govee light device with API access
 - A public Google Calendar
 - Dependencies: see `requirements.txt`
