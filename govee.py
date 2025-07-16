@@ -34,6 +34,26 @@ def set_light_color(r, g, b):
     else:
         print(f"Failed to set light color: {response.status_code} - {response.text}")
 
+def set_brightness(level):
+    headers = {
+        "Govee-API-Key": GOVEE_API_KEY,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": GOVEE_MODEL,
+        "device": GOVEE_DEVICE_MAC,
+        "cmd": {
+            "name": "brightness",
+            "value": level
+        }
+    }
+    response = requests.put("https://developer-api.govee.com/v1/devices/control", json=payload, headers=headers)
+
+    if response.status_code == 200:
+        print(f"Light brightness set to {level} successfully.")
+    else:
+        print(f"Failed to set light brightness: {response.status_code} - {response.text}")
+
 def set_color_temperature(temperature):
     headers = {
         "Govee-API-Key": GOVEE_API_KEY,

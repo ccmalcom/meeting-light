@@ -8,8 +8,8 @@
 
 - Blue light 10 minutes before a meeting
 - Red light 1 minute before a meeting
-- White light during a meeting
-- Automatic light off/reset after meeting
+- Warm white light during a meeting
+- Automatic light reset after meeting
 - Menubar app with live status, next meeting info, and a test light button
 
 ---
@@ -37,7 +37,7 @@ You’ll be prompted to enter:
 - Google Calendar API Key
 - Google Calendar ID
 
-These will be saved in a `.env` file.
+These will be saved in a `.env` file in ~/Library/Application Support/MeetingLight.
 
 ---
 

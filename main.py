@@ -1,13 +1,15 @@
 import os
+import time
+from datetime import datetime, timezone
 from dotenv import load_dotenv
+
+from govee import set_light_off, set_light_color, set_light_brightness, set_color_temperature, set_light_brightness
+from gcal import get_upcoming_events
+
 
 app_support_path = os.path.expanduser("~/Library/Application Support/MeetingLight")
 env_path = os.path.join(app_support_path, ".env")
 load_dotenv(dotenv_path=env_path)
-from govee import set_light_on, set_light_off, get_device_list, set_light_color, set_light_brightness, set_color_temperature
-from gcal import get_upcoming_events
-from datetime import datetime, timezone
-import time
 
 def run_meeting_loop(update_status=None, update_next_meeting=None):
     try:
@@ -40,22 +42,27 @@ def run_meeting_loop(update_status=None, update_next_meeting=None):
                 status = "Idle"
                 print("Meeting is more than 10 minutes away. Turning to normal.")
                 set_color_temperature(2900)
+                set_light_brightness(10)
             elif 60 < seconds_until_start <= 600:
                 status = "Meeting soon"
                 print("Meeting is within 10 minutes. Setting light to BLUE.")
                 set_light_color(0, 0, 255)
+                set_light_brightness(50)
             elif 0 < seconds_until_start <= 60:
                 status = "Meeting imminent"
                 print("Meeting is in less than 1 minute. Setting light to RED.")
                 set_light_color(255, 0, 0)
+                set_light_brightness(100)
             elif start_time <= now <= end_time:
                 status = "In meeting"
                 print("Meeting is ongoing. Setting light to WHITE.")
                 set_light_color(255, 255, 255)
+                set_light_brightness(50)
             else:
                 status = "Idle"
                 print("Meeting has ended. Turning to normal.")
                 set_color_temperature(2900)
+                set_light_brightness(10)
 
             if update_status:
                 update_status(status)
