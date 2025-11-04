@@ -3,13 +3,20 @@ import time
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 
-from govee import set_light_off, set_light_color, set_light_brightness, set_color_temperature, set_light_brightness
+from govee import set_light_off, set_light_color, set_light_brightness, set_color_temperature, set_light_brightness, get_device_list
 from gcal import get_upcoming_events
+
 
 
 app_support_path = os.path.expanduser("~/Library/Application Support/MeetingLight")
 env_path = os.path.join(app_support_path, ".env")
 load_dotenv(dotenv_path=env_path)
+
+# print device list: name, mac, model
+# device_list = get_device_list()
+# # print("Available Govee devices:", device_list["data"]["devices"])
+# for device in device_list["data"]["devices"]:
+#     print(f"device name: {device['deviceName']}, mac: {device['device']}, model: {device['model']}")
 
 def run_meeting_loop(update_status=None, update_next_meeting=None):
     try:
@@ -76,3 +83,8 @@ def run_meeting_loop(update_status=None, update_next_meeting=None):
         print(f"An error occurred: {e}")
         set_light_off()
         print("Light turned off due to error.")
+        
+        
+        
+        
+        
