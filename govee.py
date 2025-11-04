@@ -215,7 +215,7 @@ def set_light_color(r, g, b):
     return success
 
 
-def set_brightness(level):
+def set_light_brightness(level):
     """
     Set the brightness level.
     
@@ -360,20 +360,6 @@ def get_device_list():
     except RequestException as e:
         logger.error(f"Failed to retrieve device list: {str(e)}")
         return {}
-
-
-def set_light_brightness(level):
-    """
-    Set the brightness level (duplicate function name in original - keeping for compatibility).
-    
-    Args:
-        level: Brightness (0-100)
-    
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    return set_brightness(level)
-
 
 # Health check function that can be called periodically
 def perform_health_check():
