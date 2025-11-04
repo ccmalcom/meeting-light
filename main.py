@@ -88,23 +88,23 @@ def run_meeting_loop(update_status=None, update_next_meeting=None):
             light_command_success = True
 
             # Determine light state based on meeting timing
-            if seconds_until_start > 600:
+            if seconds_until_start > 600: # More than 10 minutes away
                 status = "Idle"
                 logger.info(f"Meeting '{event_summary}' is more than 10 minutes away. Setting to normal.")
                 light_command_success = set_color_temperature(2900) and set_light_brightness(10)
                 
-            elif 60 < seconds_until_start <= 600:
+            elif 60 < seconds_until_start <= 600: # Between 1 and 10 minutes away
                 status = "Meeting soon"
                 minutes_away = int(seconds_until_start / 60)
                 logger.info(f"Meeting '{event_summary}' in {minutes_away} minutes. Setting light to BLUE.")
                 light_command_success = set_light_color(0, 0, 255) and set_light_brightness(50)
                 
-            elif 0 < seconds_until_start <= 60:
+            elif 0 < seconds_until_start <= 60: # Less than 1 minute away
                 status = "Meeting imminent"
                 logger.info(f"Meeting '{event_summary}' starting in less than 1 minute! Setting light to RED.")
                 light_command_success = set_light_color(255, 0, 0) and set_light_brightness(100)
                 
-            elif start_time <= now <= end_time:
+            elif start_time <= now <= end_time: # During the meeting
                 status = "In meeting"
                 time_remaining = int((end_time - now).total_seconds() / 60)
                 logger.info(f"In meeting '{event_summary}' (ends in {time_remaining} min). Setting light to WHITE.")
