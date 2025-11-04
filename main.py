@@ -11,7 +11,8 @@ from govee import (
     set_color_temperature,
     check_connection_health,
     perform_health_check,
-    reset_connection_health
+    reset_connection_health,
+    reset_state
 )
 from gcal import get_upcoming_events
 
@@ -49,6 +50,8 @@ def run_meeting_loop(update_status=None, update_next_meeting=None):
                 if not health_status:
                     logger.warning("Connection appears unhealthy, attempting recovery...")
                     perform_health_check()
+                    # Reset state tracking after recovery to force resync
+                    reset_state()
                 
                 last_health_check = now.timestamp()
             
