@@ -6,22 +6,21 @@ import requests
 from requests.exceptions import RequestException, Timeout, ConnectionError
 from dotenv import load_dotenv
 
-# setup logging
+# Setup logging
 app_support_path = os.path.expanduser("~/Library/Application Support/MeetingLight")
 os.makedirs(app_support_path, exist_ok=True)
-log_path = os.path.join(app_support_path, "meetingLight.log")
+log_path = os.path.join(app_support_path, "meetinglight.log")
 
-#configure logging to both file and console
+# Configure logging to both file and console
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+    format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(log_path),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
-
 # Load environment variables
 env_path = os.path.join(app_support_path, ".env")
 load_dotenv(dotenv_path=env_path)
@@ -30,29 +29,59 @@ GOVEE_API_KEY = os.getenv("GOVEE_API_KEY")
 GOVEE_DEVICE_MAC = os.getenv("GOVEE_DEVICE_MAC")
 GOVEE_MODEL = os.getenv("GOVEE_MODEL")
 
-
-# API Configuration
+# API configuration
 GOVEE_API_URL = "https://developer-api.govee.com/v1/devices/control"
 REQUEST_TIMEOUT = 10  # seconds
 MAX_RETRIES = 3
-RETRY_DELAY = 2  # seconds
-RATE_LIMIT_DELAY = 0.5  # seconds
+RETRY_DELAY = 2  # seconds (will be exponentially increased)
+RATE_LIMIT_DELAY = 0.5  # seconds between API calls to avoid rate limiting
 
-#Connection health tracking
+# Connection health tracking
 last_successful_call = None
 consecutive_failures = 0
 MAX_CONSECUTIVE_FAILURES = 5
 
+# Light state tracking to avoid redundant API calls
+_current_state = {
+    'power': None,  # True=on, False=off, None=unknown
+    'color': None,  # (r, g, b) tuple or None
+    'brightness': None,  # 0-100 or None
+    'color_temperature': None,  # Kelvin value or None
+}
+
+def _update_state(key, value):
+    """Update the tracked light state."""
+    _current_state[key] = value
+    logger.debug(f"State updated: {key} = {value}")
+
+def _state_matches(key, value):
+    """Check if the desired state matches current state."""
+    return _current_state[key] == value
+
+def reset_state():
+    """Reset tracked state (useful after sleep/wake or manual light changes)."""
+    global _current_state
+    _current_state = {
+        'power': None,
+        'color': None,
+        'brightness': None,
+        'color_temperature': None,
+    }
+    logger.info("Light state tracking reset")
+
 def _make_api_call(payload, operation_name):
     """
-    Make a robust API call to Govee with retries and error handling.
+    Make an API call to Govee with retry logic and error handling.
+    
     Args:
-        payload (dict): The JSON payload to send in the PUT request.
-        operation_name (str): A descriptive name for the operation being performed.
+        payload: The JSON payload to send
+        operation_name: Description of the operation for logging
+    
     Returns:
-        bool: True if the operation was successful, False otherwise.
+        bool: True if successful, False otherwise
     """
     global last_successful_call, consecutive_failures
+    
     headers = {
         "Govee-API-Key": GOVEE_API_KEY,
         "Content-Type": "application/json"
@@ -85,6 +114,7 @@ def _make_api_call(payload, operation_name):
             
             else:
                 logger.error(f"{operation_name} - FAILED: HTTP {response.status_code} - {response.text}")
+                
                 # Don't retry on client errors (4xx) except rate limit
                 if 400 <= response.status_code < 500 and response.status_code != 429:
                     consecutive_failures += 1
@@ -115,9 +145,11 @@ def _make_api_call(payload, operation_name):
     
     return False
 
+
 def check_connection_health():
     """
     Check if the connection to Govee API is healthy.
+    
     Returns:
         tuple: (is_healthy: bool, status_message: str)
     """
@@ -138,7 +170,7 @@ def check_connection_health():
 
 
 def reset_connection_health():
-    # Manually reset connection health counters. Useful after wake from sleep.
+    """Manually reset connection health counters. Useful after wake from sleep."""
     global consecutive_failures
     consecutive_failures = 0
     logger.info("Connection health counters reset")
@@ -156,6 +188,12 @@ def set_light_color(r, g, b):
     Returns:
         bool: True if successful, False otherwise
     """
+    # Check if color already matches
+    desired_color = (r, g, b)
+    if _state_matches('color', desired_color):
+        logger.debug(f"Color already set to RGB({r},{g},{b}), skipping API call")
+        return True
+    
     payload = {
         "model": GOVEE_MODEL,
         "device": GOVEE_DEVICE_MAC,
@@ -168,7 +206,13 @@ def set_light_color(r, g, b):
             }
         }
     }
-    return _make_api_call(payload, f"Set color to RGB({r},{g},{b})")
+    
+    success = _make_api_call(payload, f"Set color to RGB({r},{g},{b})")
+    if success:
+        _update_state('color', desired_color)
+        # When setting color, temperature is cleared
+        _update_state('color_temperature', None)
+    return success
 
 
 def set_brightness(level):
@@ -181,6 +225,11 @@ def set_brightness(level):
     Returns:
         bool: True if successful, False otherwise
     """
+    # Check if brightness already matches
+    if _state_matches('brightness', level):
+        logger.debug(f"Brightness already set to {level}, skipping API call")
+        return True
+    
     payload = {
         "model": GOVEE_MODEL,
         "device": GOVEE_DEVICE_MAC,
@@ -189,7 +238,11 @@ def set_brightness(level):
             "value": level
         }
     }
-    return _make_api_call(payload, f"Set brightness to {level}")
+    
+    success = _make_api_call(payload, f"Set brightness to {level}")
+    if success:
+        _update_state('brightness', level)
+    return success
 
 
 def set_color_temperature(temperature):
@@ -202,6 +255,11 @@ def set_color_temperature(temperature):
     Returns:
         bool: True if successful, False otherwise
     """
+    # Check if temperature already matches
+    if _state_matches('color_temperature', temperature):
+        logger.debug(f"Color temperature already set to {temperature}K, skipping API call")
+        return True
+    
     payload = {
         "model": GOVEE_MODEL,
         "device": GOVEE_DEVICE_MAC,
@@ -210,7 +268,13 @@ def set_color_temperature(temperature):
             "value": temperature
         }
     }
-    return _make_api_call(payload, f"Set color temperature to {temperature}K")
+    
+    success = _make_api_call(payload, f"Set color temperature to {temperature}K")
+    if success:
+        _update_state('color_temperature', temperature)
+        # When setting temperature, color is cleared
+        _update_state('color', None)
+    return success
 
 
 def set_light_on():
@@ -220,6 +284,11 @@ def set_light_on():
     Returns:
         bool: True if successful, False otherwise
     """
+    # Check if light is already on
+    if _state_matches('power', True):
+        logger.debug("Light already on, skipping API call")
+        return True
+    
     payload = {
         "model": GOVEE_MODEL,
         "device": GOVEE_DEVICE_MAC,
@@ -228,7 +297,11 @@ def set_light_on():
             "value": "on"
         }
     }
-    return _make_api_call(payload, "Turn light ON")
+    
+    success = _make_api_call(payload, "Turn light ON")
+    if success:
+        _update_state('power', True)
+    return success
 
 
 def set_light_off():
@@ -238,6 +311,11 @@ def set_light_off():
     Returns:
         bool: True if successful, False otherwise
     """
+    # Check if light is already off
+    if _state_matches('power', False):
+        logger.debug("Light already off, skipping API call")
+        return True
+    
     payload = {
         "model": GOVEE_MODEL,
         "device": GOVEE_DEVICE_MAC,
@@ -246,7 +324,11 @@ def set_light_off():
             "value": "off"
         }
     }
-    return _make_api_call(payload, "Turn light OFF")
+    
+    success = _make_api_call(payload, "Turn light OFF")
+    if success:
+        _update_state('power', False)
+    return success
 
 
 def get_device_list():
