@@ -2,10 +2,21 @@
 Configuration constants for Meeting Light application.
 
 This module centralizes all configuration values to make them easy to find and modify.
+User customizations are loaded from user_config.json and override defaults.
 """
 
+import os
+
 # ============================================================================
-# TIMING CONFIGURATION
+# FILE PATHS
+# ============================================================================
+
+APP_SUPPORT_PATH = os.path.expanduser("~/Library/Application Support/MeetingLight")
+ENV_FILE_PATH = os.path.join(APP_SUPPORT_PATH, ".env")
+LOG_FILE_PATH = os.path.join(APP_SUPPORT_PATH, "meetinglight.log")
+
+# ============================================================================
+# TIMING CONFIGURATION (DEFAULTS)
 # ============================================================================
 
 # Meeting notification thresholds (in seconds)
@@ -19,7 +30,7 @@ LOOP_UPDATE_INTERVAL = 60  # Check calendar every minute
 HEALTH_CHECK_INTERVAL = 300  # Health check every 5 minutes (5 * 60)
 
 # ============================================================================
-# LIGHT COLORS AND BRIGHTNESS
+# LIGHT COLORS AND BRIGHTNESS (DEFAULTS)
 # ============================================================================
 
 # RGB color values (0-255)
@@ -69,16 +80,6 @@ LOG_LEVEL = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 
 # ============================================================================
-# FILE PATHS
-# ============================================================================
-
-import os
-
-APP_SUPPORT_PATH = os.path.expanduser("~/Library/Application Support/MeetingLight")
-ENV_FILE_PATH = os.path.join(APP_SUPPORT_PATH, ".env")
-LOG_FILE_PATH = os.path.join(APP_SUPPORT_PATH, "meetinglight.log")
-
-# ============================================================================
 # STATUS MESSAGES
 # ============================================================================
 
@@ -88,6 +89,51 @@ STATUS_IMMINENT = "Meeting imminent"
 STATUS_IN_MEETING = "In meeting"
 STATUS_NO_EVENTS = "No upcoming events"
 STATUS_CONNECTION_ISSUE = " (⚠️ Connection issue)"
+
+# ============================================================================
+# USER CONFIG LOADING
+# ============================================================================
+
+def _load_user_config():
+    """Load user configuration from JSON file if it exists."""
+    import json
+    user_config_path = os.path.join(APP_SUPPORT_PATH, "user_config.json")
+    if os.path.exists(user_config_path):
+        try:
+            with open(user_config_path, 'r') as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+# Load user config and override defaults
+_user_config = _load_user_config()
+
+# Override timing if user has customized
+if 'meeting_idle_threshold' in _user_config:
+    MEETING_IDLE_THRESHOLD = _user_config['meeting_idle_threshold']
+if 'meeting_soon_threshold' in _user_config:
+    MEETING_SOON_THRESHOLD = _user_config['meeting_soon_threshold']
+
+# Override colors if user has customized
+if 'color_soon' in _user_config:
+    COLOR_SOON = tuple(_user_config['color_soon'])
+if 'color_imminent' in _user_config:
+    COLOR_IMMINENT = tuple(_user_config['color_imminent'])
+if 'color_in_meeting' in _user_config:
+    COLOR_IN_MEETING = tuple(_user_config['color_in_meeting'])
+if 'color_idle_temp' in _user_config:
+    TEMPERATURE_IDLE = _user_config['color_idle_temp']
+
+# Override brightness if user has customized
+if 'brightness_idle' in _user_config:
+    BRIGHTNESS_IDLE = _user_config['brightness_idle']
+if 'brightness_soon' in _user_config:
+    BRIGHTNESS_SOON = _user_config['brightness_soon']
+if 'brightness_imminent' in _user_config:
+    BRIGHTNESS_IMMINENT = _user_config['brightness_imminent']
+if 'brightness_in_meeting' in _user_config:
+    BRIGHTNESS_IN_MEETING = _user_config['brightness_in_meeting']
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -127,3 +173,52 @@ def get_light_config_for_status(status: str) -> dict:
     }
     
     return configs.get(status, configs[STATUS_IDLE])
+
+
+def reload_config():
+    """
+    Reload configuration from user_config.json.
+    
+    This should be called after settings are updated to apply new values
+    without restarting the app.
+    """
+    global MEETING_IDLE_THRESHOLD, MEETING_SOON_THRESHOLD
+    global COLOR_SOON, COLOR_IMMINENT, COLOR_IN_MEETING, TEMPERATURE_IDLE
+    global BRIGHTNESS_IDLE, BRIGHTNESS_SOON, BRIGHTNESS_IMMINENT, BRIGHTNESS_IN_MEETING
+    
+    # Reload user config
+    user_config = _load_user_config()
+    
+    # Reset to defaults first
+    MEETING_IDLE_THRESHOLD = 600
+    MEETING_SOON_THRESHOLD = 60
+    COLOR_SOON = (0, 0, 255)
+    COLOR_IMMINENT = (255, 0, 0)
+    COLOR_IN_MEETING = (255, 255, 255)
+    TEMPERATURE_IDLE = 2900
+    BRIGHTNESS_IDLE = 10
+    BRIGHTNESS_SOON = 50
+    BRIGHTNESS_IMMINENT = 100
+    BRIGHTNESS_IN_MEETING = 50
+    
+    # Apply user overrides
+    if 'meeting_idle_threshold' in user_config:
+        MEETING_IDLE_THRESHOLD = user_config['meeting_idle_threshold']
+    if 'meeting_soon_threshold' in user_config:
+        MEETING_SOON_THRESHOLD = user_config['meeting_soon_threshold']
+    if 'color_soon' in user_config:
+        COLOR_SOON = tuple(user_config['color_soon'])
+    if 'color_imminent' in user_config:
+        COLOR_IMMINENT = tuple(user_config['color_imminent'])
+    if 'color_in_meeting' in user_config:
+        COLOR_IN_MEETING = tuple(user_config['color_in_meeting'])
+    if 'color_idle_temp' in user_config:
+        TEMPERATURE_IDLE = user_config['color_idle_temp']
+    if 'brightness_idle' in user_config:
+        BRIGHTNESS_IDLE = user_config['brightness_idle']
+    if 'brightness_soon' in user_config:
+        BRIGHTNESS_SOON = user_config['brightness_soon']
+    if 'brightness_imminent' in user_config:
+        BRIGHTNESS_IMMINENT = user_config['brightness_imminent']
+    if 'brightness_in_meeting' in user_config:
+        BRIGHTNESS_IN_MEETING = user_config['brightness_in_meeting']

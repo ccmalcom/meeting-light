@@ -33,7 +33,9 @@ import rumps
 import threading
 from datetime import datetime
 from main import run_meeting_loop
-from govee import set_light_color
+from govee import set_light_color, reset_state
+from config import reload_config
+from settings_ui import show_settings
 
 class MeetingLightApp(rumps.App):
     def __init__(self):
@@ -41,7 +43,7 @@ class MeetingLightApp(rumps.App):
         self.status_item = rumps.MenuItem("Status: Initializing...")
         self.next_meeting_item = rumps.MenuItem("Next Meeting At: Unknown")
         self.test_light_item = rumps.MenuItem("Test Light (set green)", callback=self.test_light)
-        self.settings_item = rumps.MenuItem("Settings", callback=self.open_settings)
+        self.settings_item = rumps.MenuItem("Settings...", callback=self.open_settings)
 
         self.menu = [
             self.status_item,
@@ -53,9 +55,17 @@ class MeetingLightApp(rumps.App):
 
         # Prompt for missing env vars on first launch
         if not all(os.getenv(var) for var in required_env_vars):
-            rumps.alert("Welcome to Meeting Light!\n\nPlease enter your configuration values on the next screens.\n\nYou can change these later in the Settings menu. For more information, please see the README.md file.")
-            self.open_settings(None)
-            load_dotenv(dotenv_path=env_path, override=True)
+            response = rumps.alert(
+                title="Welcome to Meeting Light!",
+                message="Please configure your API credentials and preferences.\n\nYou can change these later in the Settings menu.",
+                ok="Open Settings",
+                cancel="Quit"
+            )
+            if response == 1:  # OK clicked
+                self.open_settings(None)
+                load_dotenv(dotenv_path=env_path, override=True)
+            else:
+                sys.exit(0)
 
         self.update_thread = threading.Thread(target=self.run_loop)
         self.update_thread.daemon = True
@@ -72,34 +82,34 @@ class MeetingLightApp(rumps.App):
         run_meeting_loop(update_status=update_status, update_next_meeting=update_next_meeting)
 
     def test_light(self, _):
+        """Test the light by setting it to green."""
         set_light_color(0, 255, 128)
         
     def open_settings(self, _):
-
-        config = dotenv_values(env_path)
-
-        fields = {
-            "GOVEE_API_KEY": "Enter your Govee API Key:",
-            "GOVEE_DEVICE_MAC": "Enter your Govee Device MAC (xx:xx:xx:xx:xx:xx):",
-            "GOVEE_MODEL": "Enter your Govee Model (H6001):",
-            "GOOGLE_CALENDAR_ID": "Enter your Google Calendar ID:"
-        }
-
-        for key, message in fields.items():
-            current_value = config.get(key, "")
-            response = rumps.Window(
-                message=message,
-                default_text=current_value,
-                title="settings",
-                ok="Save",
-                cancel="Skip"
-            ).run()
-
-            if response.clicked and response.text:
-                set_key(env_path, key, response.text)
-
-        rumps.alert("Config updated! Restarting the app...")
-        os.execv(sys.executable, [sys.executable] + sys.argv)
+        """Open the settings window."""
+        try:
+            # Show settings window
+            show_settings()
+            
+            # After settings window closes, reload config and reset light state
+            reload_config()
+            reset_state()
+            
+            # Reload environment variables
+            load_dotenv(dotenv_path=env_path, override=True)
+            
+            # Inform user
+            rumps.notification(
+                title="Settings Updated",
+                subtitle="",
+                message="Your settings have been saved. Changes will take effect on the next calendar check."
+            )
+            
+        except Exception as e:
+            rumps.alert(
+                title="Settings Error",
+                message=f"An error occurred while opening settings:\n\n{str(e)}"
+            )
         
 if __name__ == "__main__":
     MeetingLightApp().run()
