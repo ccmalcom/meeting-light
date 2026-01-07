@@ -15,6 +15,9 @@ if not os.path.exists(env_path):
 existing_env = dotenv_values(env_path)
 
 # Set a default Google API key if it's not already set
+# NOTE: This is a convenience feature for quick setup with public calendars.
+# Users should create their own API key at https://console.cloud.google.com
+# to avoid shared quota limits. This key only has read access to public calendars.
 DEFAULT_GOOGLE_API_KEY = "AIzaSyA-wjjty7da5rKr_gEm6OJna4vm_X9XGoo"
 if "GOOGLE_API_KEY" not in existing_env:
     set_key(env_path, "GOOGLE_API_KEY", DEFAULT_GOOGLE_API_KEY)
@@ -34,6 +37,7 @@ import threading
 from datetime import datetime
 from main import run_meeting_loop
 from govee import set_light_color
+from config import DEFAULT_WORKING_HOURS_START, DEFAULT_WORKING_HOURS_END
 
 class MeetingLightApp(rumps.App):
     def __init__(self):
@@ -53,7 +57,7 @@ class MeetingLightApp(rumps.App):
 
         # Prompt for missing env vars on first launch
         if not all(os.getenv(var) for var in required_env_vars):
-            rumps.alert("Welcome to Meeting Light!\n\nPlease enter your configuration values on the next screens.\n\nYou can change these later in the Settings menu. For more information, please see the README.md file.")
+            rumps.alert("Welcome to Meeting Light!\n\nPlease enter your configuration values on the next screens.\n\nNote: Working hours default to 8:00 AM - 8:00 PM in your local timezone. You can customize these in Settings.\n\nFor more information, please see the README.md file.")
             self.open_settings(None)
             load_dotenv(dotenv_path=env_path, override=True)
 
@@ -82,11 +86,19 @@ class MeetingLightApp(rumps.App):
             "GOVEE_API_KEY": "Enter your Govee API Key:",
             "GOVEE_DEVICE_MAC": "Enter your Govee Device MAC (xx:xx:xx:xx:xx:xx):",
             "GOVEE_MODEL": "Enter your Govee Model (H6001):",
-            "GOOGLE_CALENDAR_ID": "Enter your Google Calendar ID:"
+            "GOOGLE_CALENDAR_ID": "Enter your Google Calendar ID:",
+            "WORKING_HOURS_START": "Working hours start (24hr format, e.g., 08:00):",
+            "WORKING_HOURS_END": "Working hours end (24hr format, e.g., 20:00):"
+        }
+
+        # Set defaults for working hours if not present
+        defaults = {
+            "WORKING_HOURS_START": DEFAULT_WORKING_HOURS_START,
+            "WORKING_HOURS_END": DEFAULT_WORKING_HOURS_END
         }
 
         for key, message in fields.items():
-            current_value = config.get(key, "")
+            current_value = config.get(key, defaults.get(key, ""))
             response = rumps.Window(
                 message=message,
                 default_text=current_value,

@@ -29,7 +29,10 @@ from config import (
     STATUS_IN_MEETING,
     STATUS_NO_EVENTS,
     STATUS_CONNECTION_ISSUE,
-    get_light_config_for_status
+    DEFAULT_WORKING_HOURS_START,
+    DEFAULT_WORKING_HOURS_END,
+    get_light_config_for_status,
+    is_within_working_hours
 )
 
 from govee import (
@@ -121,23 +124,40 @@ def run_meeting_loop(
 ) -> None:
     """
     Main loop for monitoring calendar and controlling light.
-    
+
     Args:
         update_status: Optional callback to update status in UI
         update_next_meeting: Optional callback to update next meeting time in UI
     """
     global last_health_check
-    
+
+    # Load working hours from environment or use defaults
+    working_hours_start = os.getenv("WORKING_HOURS_START", DEFAULT_WORKING_HOURS_START)
+    working_hours_end = os.getenv("WORKING_HOURS_END", DEFAULT_WORKING_HOURS_END)
+
     logger.info("Meeting Light loop started")
     logger.info(f"Configuration: Idle>{MEETING_IDLE_THRESHOLD}s, Soon<={MEETING_IDLE_THRESHOLD}s, Imminent<={MEETING_SOON_THRESHOLD}s")
-    
+    logger.info(f"Working hours: {working_hours_start} to {working_hours_end}")
+
     try:
         iteration = 0
-        
+
         while True:
             iteration += 1
             now = datetime.now(timezone.utc)
+            local_now = now.astimezone()  # Convert to local time for working hours check
             seconds_to_next_check = LOOP_UPDATE_INTERVAL - (now.second % LOOP_UPDATE_INTERVAL) - now.microsecond / 1_000_000
+
+            # Check if current time is within working hours
+            if not is_within_working_hours(local_now, working_hours_start, working_hours_end):
+                logger.debug(f"Outside working hours ({working_hours_start} to {working_hours_end}). Light off.")
+                set_light_off()
+
+                if update_status:
+                    update_status("Outside working hours")
+
+                time.sleep(seconds_to_next_check)
+                continue
             
             # Periodic health check
             if last_health_check is None or (now.timestamp() - last_health_check) > HEALTH_CHECK_INTERVAL:

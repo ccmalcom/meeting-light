@@ -1,0 +1,82 @@
+# Meeting Light - Changelog
+
+## Version 1.2.0 (2026-01-07)
+
+### New Features
+
+**Working Hours Support**
+- Added configurable working hours to automatically turn off the light outside of work time
+- Light will turn off completely outside configured hours (no more staying on all night!)
+- Default working hours: 8:00 AM - 8:00 PM
+- Configurable via Settings menu with 24-hour format (HH:MM)
+- Automatically uses your system's local timezone - no timezone configuration needed
+- Supports overnight shifts (e.g., 20:00 to 08:00 for night workers)
+- Status displays "Outside working hours" when light is off due to schedule
+- Gracefully falls back to 24/7 operation if time parsing fails
+
+### Improvements
+
+**Documentation**
+- Added clear explanation for the default Google API key
+- Users are now informed this is for convenience with public calendars
+- Encourages users to create their own API key to avoid shared quota limits
+
+### Technical Details
+
+**Configuration**
+- New config constants: DEFAULT_WORKING_HOURS_START, DEFAULT_WORKING_HOURS_END
+- New environment variables: WORKING_HOURS_START, WORKING_HOURS_END
+- New helper function: is_within_working_hours() with timezone-aware time comparison
+
+**Implementation**
+- Working hours check runs on each loop iteration (every 60 seconds)
+- Light automatically turns off outside working hours
+- Logs working hours configuration at startup
+- Time comparison handles edge cases (midnight rollover, invalid input)
+
+### Files Modified
+- config.py: Added working hours constants and helper function
+- app.py: Added working hours fields to settings UI, documented Google API key
+- main.py: Added working hours check logic in main loop
+
+---
+
+## Version 1.1.0 (Previous Release)
+
+### Features
+- Intelligent state tracking (97% reduction in API calls)
+- Robust connection handling with automatic retry
+- Sleep/wake resilience
+- Health monitoring with auto-recovery
+- Smart meeting filtering (declined, cancelled, all-day events)
+- Menubar integration with live status
+- Comprehensive logging
+- Rate limit protection
+- Customizable configuration via config.py
+
+### Visual Notifications
+- Warm White (Idle): Meeting >10 minutes away
+- Blue (Soon): Meeting in 10 minutes
+- Red (Imminent): Meeting in <1 minute
+- White (Active): Currently in a meeting
+
+---
+
+## Upgrade Instructions
+
+### From 1.1.x to 1.2.0
+
+1. Download the new version from the releases page
+2. Replace the old Meeting Light.app in /Applications
+3. Launch the app - working hours will default to 8 AM - 8 PM
+4. (Optional) Customize working hours via Settings menu
+5. (Optional) Create your own Google API key for better quota limits
+
+**Note:** All existing settings (Govee API key, device MAC, calendar ID) will be preserved.
+
+---
+
+## Support
+
+- Issues: https://github.com/ccmalcom/meeting-light/issues
+- Discussions: https://github.com/ccmalcom/meeting-light/discussions
